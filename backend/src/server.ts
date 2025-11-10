@@ -19,9 +19,21 @@ const server = createServer(app);
 connectDB();
 
 // Middleware
-app.use(cors());
+const allowedOrigin = process.env.FRONTEND_URL || 'http://localhost:5173';
+
+app.use(
+  cors({
+    origin: allowedOrigin,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    credentials: true,
+  })
+);
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+console.log('✅ Allowed CORS origin:', allowedOrigin);
+
 
 // Serve static files (PDF receipts)
 app.use('/api/receipt/download', express.static(path.join(__dirname, 'pdf/receipts')));
