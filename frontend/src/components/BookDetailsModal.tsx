@@ -39,7 +39,7 @@ const BookDetailsModal: React.FC<Props> = ({ book, open, onClose, onRate }) => {
     try {
       const wlRaw = localStorage.getItem('bookWishlist');
       const wl = wlRaw ? (JSON.parse(wlRaw) as string[]) : [];
-      const identifier = book.barcode || book._id || book.title;
+
       setWishlisted(wl.includes(book.barcode) || wl.includes(book._id) || wl.includes(book.title));
     } catch {
       setWishlisted(false);
