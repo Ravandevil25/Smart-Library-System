@@ -7,7 +7,7 @@ import fs from 'fs';
 
 import connectDB from './utils/database';
 import routes from './routes';
-import { setupSocketIO, emitOccupancyUpdate } from './utils/socket';
+import { setupSocketIO } from './utils/socket';
 
 // Load environment variables
 dotenv.config({ path: './config.env' });
@@ -18,22 +18,32 @@ const server = createServer(app);
 // Connect to database
 connectDB();
 
-// Middleware
-const allowedOrigin = process.env.FRONTEND_URL || 'http://localhost:5173';
+// ✅ MULTI-DOMAIN CORS SETUP
+const allowedOrigins = (process.env.FRONTEND_URLS || '')
+  .split(',')
+  .map(url => url.trim())
+  .filter(Boolean);
 
 app.use(
   cors({
-    origin: allowedOrigin,
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    origin: (origin, callback) => {
+      // Allow requests with no origin (like Postman, curl)
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        console.warn('❌ Blocked by CORS:', origin);
+        callback(new Error('Not allowed by CORS'));
+      }
+    },
     credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   })
 );
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-console.log('✅ Allowed CORS origin:', allowedOrigin);
-
+console.log('✅ Allowed CORS origins:', allowedOrigins);
 
 // Serve static files (PDF receipts)
 app.use('/api/receipt/download', express.static(path.join(__dirname, 'pdf/receipts')));
@@ -58,8 +68,6 @@ app.get('/api/health', (req, res) => {
 
 // Setup Socket.IO
 const io = setupSocketIO(server);
-
-// Make io available to routes
 app.set('io', io);
 
 // Error handling middleware
@@ -68,13 +76,12 @@ app.use((err: any, req: express.Request, res: express.Response, next: express.Ne
   res.status(500).json({ message: 'Something went wrong!' });
 });
 
-// 404 handler — use a middleware without a path so we don't pass '*' to path-to-regexp
+// 404 handler
 app.use((req, res) => {
   res.status(404).json({ message: 'Route not found' });
 });
 
 const PORT = process.env.PORT || 5000;
-
 server.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
   console.log(`Environment: ${process.env.NODE_ENV}`);
