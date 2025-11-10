@@ -1,0 +1,32 @@
+Sample Book Barcodes for Testing
+=====================================
+
+1. Effective TypeScript
+   Barcode: 9780134685991
+   File: 9780134685991_Effective_TypeScript.png
+
+2. Learning React
+   Barcode: 9781492052204
+   File: 9781492052204_Learning_React.png
+
+3. Clean Code
+   Barcode: 9780132350884
+   File: 9780132350884_Clean_Code.png
+
+4. Head First Design Patterns
+   Barcode: 9780596007126
+   File: 9780596007126_Head_First_Design_Patterns.png
+
+5. The Pragmatic Programmer
+   Barcode: 9780135957059
+   File: 9780135957059_The_Pragmatic_Programmer.png
+
+
+📱 How to Use:
+1. Open the PNG files on a phone/tablet screen
+2. Or print them out
+3. Scan with the barcode scanner in the Borrow Books section
+4. You can also manually enter the barcode numbers above
+
+💡 Tip: Make sure to seed the database first with:
+   npm run seed
