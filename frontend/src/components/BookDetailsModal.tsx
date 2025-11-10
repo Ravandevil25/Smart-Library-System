@@ -37,10 +37,9 @@ const BookDetailsModal: React.FC<Props> = ({ book, open, onClose, onRate }) => {
     }
     // initialize local wishlist/reserve state - check barcode first, then ID
     try {
-      const wlRaw = localStorage.getItem('bookWishlist');
-      const wl = wlRaw ? (JSON.parse(wlRaw) as string[]) : [];
-
-      setWishlisted(wl.includes(book.barcode) || wl.includes(book._id) || wl.includes(book.title));
+  const wlRaw = localStorage.getItem('bookWishlist');
+  const wl = wlRaw ? (JSON.parse(wlRaw) as string[]) : [];
+  setWishlisted(wl.includes(book.barcode) || wl.includes(book._id) || wl.includes(book.title));
     } catch {
       setWishlisted(false);
     }
