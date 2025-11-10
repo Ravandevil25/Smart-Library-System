@@ -6,6 +6,7 @@ import type { Book } from '../types';
 import BookCard from '../components/BookCard';
 
 const WishlistPage: React.FC = () => {
+  const { updateUser } = useAuth(); // ✅ FIXED: now we actually use the hook and destructure updateUser
   const [wishlist, setWishlist] = useState<Book[]>([]);
   const [reserves, setReserves] = useState<Book[]>([]);
   const [loading, setLoading] = useState(true);
@@ -20,12 +21,12 @@ const WishlistPage: React.FC = () => {
         // Get wishlist and reserves from server first, fallback to localStorage
         let wl: string[] = [];
         let rs: string[] = [];
-        
+
         try {
           const me = await authApi.getMe();
           wl = me.wishlist || [];
           rs = me.reserves || [];
-          updateUser(me);
+          updateUser(me); // ✅ FIXED: now valid
         } catch (err) {
           console.warn('Failed to fetch user data from server, trying localStorage', err);
           // Fallback to localStorage if server fails
@@ -45,7 +46,7 @@ const WishlistPage: React.FC = () => {
           const rsRaw = localStorage.getItem('bookReserves');
           const localWl = wlRaw ? (JSON.parse(wlRaw) as string[]) : [];
           const localRs = rsRaw ? (JSON.parse(rsRaw) as string[]) : [];
-          
+
           // Merge server and local data (avoid duplicates)
           wl = Array.from(new Set([...wl, ...localWl]));
           rs = Array.from(new Set([...rs, ...localRs]));
@@ -56,24 +57,21 @@ const WishlistPage: React.FC = () => {
         const fetchBooks = async (arr: string[]) => {
           const results: Book[] = [];
           const errors: string[] = [];
-          
+
           for (const identifier of arr) {
             try {
-              // Try to fetch by barcode/ID (backend now handles both)
               const b = await bookApi.getByBarcode(identifier);
               results.push(b);
             } catch (err) {
               console.warn('Failed to fetch book', identifier, err);
               errors.push(identifier);
-              // If it's an ID that failed, it might be an invalid reference
-              // We'll just skip it and continue
             }
           }
-          
+
           if (errors.length > 0 && mounted) {
             console.warn('Some books could not be fetched (they may have been removed):', errors);
           }
-          
+
           return results;
         };
 
@@ -81,7 +79,7 @@ const WishlistPage: React.FC = () => {
         if (!mounted) return;
         setWishlist(wlBooks);
         setReserves(rBooks);
-        
+
         if (wlBooks.length === 0 && wl.length > 0) {
           setError('Some wishlist items could not be loaded. The books may have been removed.');
         }
@@ -97,26 +95,25 @@ const WishlistPage: React.FC = () => {
     };
 
     load();
-    return () => { mounted = false; };
-  }, [updateUser]);
+    return () => {
+      mounted = false;
+    };
+  }, [updateUser]); // ✅ FIXED: dependency now valid
 
   const removeWishlist = async (barcode: string) => {
     try {
       await bookApi.removeFromWishlist(barcode);
-      setWishlist((s) => s.filter(b => b.barcode !== barcode));
-      // Also update localStorage
+      setWishlist((s) => s.filter((b) => b.barcode !== barcode));
       const raw = localStorage.getItem('bookWishlist');
       const arr = raw ? (JSON.parse(raw) as string[]) : [];
-      localStorage.setItem('bookWishlist', JSON.stringify(arr.filter(a => a !== barcode)));
-      // Notify other components
+      localStorage.setItem('bookWishlist', JSON.stringify(arr.filter((a) => a !== barcode)));
       window.dispatchEvent(new CustomEvent('booklists:changed', { detail: { type: 'wishlist', barcode } }));
     } catch (err) {
       console.warn('Failed to remove from server wishlist, using local only', err);
-      // fallback local
       const raw = localStorage.getItem('bookWishlist');
       const arr = raw ? (JSON.parse(raw) as string[]) : [];
-      localStorage.setItem('bookWishlist', JSON.stringify(arr.filter(a => a !== barcode)));
-      setWishlist((s) => s.filter(b => b.barcode !== barcode));
+      localStorage.setItem('bookWishlist', JSON.stringify(arr.filter((a) => a !== barcode)));
+      setWishlist((s) => s.filter((b) => b.barcode !== barcode));
       window.dispatchEvent(new CustomEvent('booklists:changed', { detail: { type: 'wishlist', barcode } }));
     }
   };
@@ -124,19 +121,17 @@ const WishlistPage: React.FC = () => {
   const removeReserve = async (barcode: string) => {
     try {
       await bookApi.removeFromReserve(barcode);
-      setReserves((s) => s.filter(b => b.barcode !== barcode));
-      // Also update localStorage
+      setReserves((s) => s.filter((b) => b.barcode !== barcode));
       const raw = localStorage.getItem('bookReserves');
       const arr = raw ? (JSON.parse(raw) as string[]) : [];
-      localStorage.setItem('bookReserves', JSON.stringify(arr.filter(a => a !== barcode)));
-      // Notify other components
+      localStorage.setItem('bookReserves', JSON.stringify(arr.filter((a) => a !== barcode)));
       window.dispatchEvent(new CustomEvent('booklists:changed', { detail: { type: 'reserve', barcode } }));
     } catch (err) {
       console.warn('Failed to remove from server reserves, using local only', err);
       const raw = localStorage.getItem('bookReserves');
       const arr = raw ? (JSON.parse(raw) as string[]) : [];
-      localStorage.setItem('bookReserves', JSON.stringify(arr.filter(a => a !== barcode)));
-      setReserves((s) => s.filter(b => b.barcode !== barcode));
+      localStorage.setItem('bookReserves', JSON.stringify(arr.filter((a) => a !== barcode)));
+      setReserves((s) => s.filter((b) => b.barcode !== barcode));
       window.dispatchEvent(new CustomEvent('booklists:changed', { detail: { type: 'reserve', barcode } }));
     }
   };
@@ -144,48 +139,39 @@ const WishlistPage: React.FC = () => {
   const refreshData = () => {
     setLoading(true);
     setError(null);
-    // Trigger reload by updating dependency
     const load = async () => {
       try {
         const me = await authApi.getMe();
-        updateUser(me);
-        
+        updateUser(me); // ✅ FIXED
+
         const wl = me.wishlist || [];
         const rs = me.reserves || [];
-        
-        // Also check localStorage
-        try {
-          const wlRaw = localStorage.getItem('bookWishlist');
-          const rsRaw = localStorage.getItem('bookReserves');
-          const localWl = wlRaw ? (JSON.parse(wlRaw) as string[]) : [];
-          const localRs = rsRaw ? (JSON.parse(rsRaw) as string[]) : [];
-          const allWl = Array.from(new Set([...wl, ...localWl]));
-          const allRs = Array.from(new Set([...rs, ...localRs]));
-          
-          const fetchBooks = async (arr: string[]) => {
-            const results: Book[] = [];
-            for (const identifier of arr) {
-              try {
-                // Try to fetch by barcode/ID (backend now handles both)
-                const b = await bookApi.getByBarcode(identifier);
-                results.push(b);
-              } catch (err) {
-                console.warn('Failed to fetch book', identifier, err);
-                // Skip invalid references
-              }
+
+        const wlRaw = localStorage.getItem('bookWishlist');
+        const rsRaw = localStorage.getItem('bookReserves');
+        const localWl = wlRaw ? (JSON.parse(wlRaw) as string[]) : [];
+        const localRs = rsRaw ? (JSON.parse(rsRaw) as string[]) : [];
+        const allWl = Array.from(new Set([...wl, ...localWl]));
+        const allRs = Array.from(new Set([...rs, ...localRs]));
+
+        const fetchBooks = async (arr: string[]) => {
+          const results: Book[] = [];
+          for (const identifier of arr) {
+            try {
+              const b = await bookApi.getByBarcode(identifier);
+              results.push(b);
+            } catch (err) {
+              console.warn('Failed to fetch book', identifier, err);
             }
-            return results;
-          };
-          
-          const [wlBooks, rBooks] = await Promise.all([fetchBooks(allWl), fetchBooks(allRs)]);
-          setWishlist(wlBooks);
-          setReserves(rBooks);
-        } catch (err) {
-          console.error('Failed to refresh', err);
-          setError('Failed to refresh data. Please try again.');
-        }
+          }
+          return results;
+        };
+
+        const [wlBooks, rBooks] = await Promise.all([fetchBooks(allWl), fetchBooks(allRs)]);
+        setWishlist(wlBooks);
+        setReserves(rBooks);
       } catch (err) {
-        console.error('Failed to refresh user data', err);
+        console.error('Failed to refresh data', err);
         setError('Failed to refresh data. Please try again.');
       } finally {
         setLoading(false);
@@ -218,11 +204,16 @@ const WishlistPage: React.FC = () => {
           <div className="text-gray-600 mb-4 sm:mb-6 text-sm sm:text-base">No items in wishlist.</div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6 mb-4 sm:mb-6">
-            {wishlist.map(b => (
+            {wishlist.map((b) => (
               <div key={b.barcode}>
                 <BookCard book={b} />
                 <div className="mt-2 flex gap-2">
-                  <button onClick={() => removeWishlist(b.barcode)} className="w-full px-3 py-1 border rounded text-xs sm:text-sm hover:bg-gray-50 transition-colors">Remove</button>
+                  <button
+                    onClick={() => removeWishlist(b.barcode)}
+                    className="w-full px-3 py-1 border rounded text-xs sm:text-sm hover:bg-gray-50 transition-colors"
+                  >
+                    Remove
+                  </button>
                 </div>
               </div>
             ))}
@@ -234,11 +225,16 @@ const WishlistPage: React.FC = () => {
           <div className="text-gray-600 text-sm sm:text-base">No reservations.</div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
-            {reserves.map(b => (
+            {reserves.map((b) => (
               <div key={b.barcode}>
                 <BookCard book={b} />
                 <div className="mt-2 flex gap-2">
-                  <button onClick={() => removeReserve(b.barcode)} className="w-full px-3 py-1 border rounded text-xs sm:text-sm hover:bg-gray-50 transition-colors">Cancel</button>
+                  <button
+                    onClick={() => removeReserve(b.barcode)}
+                    className="w-full px-3 py-1 border rounded text-xs sm:text-sm hover:bg-gray-50 transition-colors"
+                  >
+                    Cancel
+                  </button>
                 </div>
               </div>
             ))}
@@ -250,4 +246,3 @@ const WishlistPage: React.FC = () => {
 };
 
 export default WishlistPage;
-
