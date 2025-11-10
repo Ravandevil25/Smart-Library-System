@@ -6,7 +6,7 @@ import type { Book } from '../types';
 import BookCard from '../components/BookCard';
 
 const WishlistPage: React.FC = () => {
-  const { updateUser, user } = useAuth();
+  const { updateUser= useAuth();
   const [wishlist, setWishlist] = useState<Book[]>([]);
   const [reserves, setReserves] = useState<Book[]>([]);
   const [loading, setLoading] = useState(true);
