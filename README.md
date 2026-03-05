@@ -221,15 +221,10 @@ The deployment guide covers:
 - To prepare for production: set up MongoDB Atlas, secure environment variables, build both apps, and host the frontend behind a static server or CDN.
 - To deploy to Vercel: follow the comprehensive guide in `VERCEL_DEPLOYMENT.md`.
 
-If you'd like, I can also:
 
-- add a top-level `.env.example` and `backend/.env.example` and `frontend/.env.example` files
-- add a short CONTRIBUTING.md
-- generate a minimal health-check endpoint for easy containerization
 
 ---
 
-If you'd like any section expanded (example envs, API contract examples, or a developer quick-checklist), tell me which parts and I'll add them.
 
 
 # Smart-Library-System
